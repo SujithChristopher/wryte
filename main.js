@@ -10,6 +10,11 @@ class WryteEditor {
     this.zoomLevel = 100;
     this.zoomLevelEl = document.getElementById('zoom-level');
     
+    // Document structure
+    this.currentPage = 1;
+    this.documentWrapper = document.querySelector('.document-wrapper');
+    this.pageHeight = 11; // inches
+    
     // Search functionality
     this.currentSearchResults = [];
     this.currentSearchIndex = -1;
@@ -17,6 +22,11 @@ class WryteEditor {
     // Color state
     this.currentTextColor = '#000000';
     this.currentHighlightColor = '#ffff00';
+    
+    // Spell checking state
+    this.spellCheckEnabled = true;
+    this.customDictionary = new Set();
+    this.ignoredWords = new Set();
     
     this.initializeEventListeners();
     this.updateStats();
@@ -27,6 +37,7 @@ class WryteEditor {
     this.initializeFontControls();
     this.initializeParagraphControls();
     this.initializeClipboardControls();
+    this.initializeStylesControls();
     this.initializeSearchControls();
     this.initializeTableControls();
     this.initializeViewControls();
@@ -253,6 +264,158 @@ class WryteEditor {
     });
   }
 
+  // === STYLES CONTROLS ===
+  initializeStylesControls() {
+    document.querySelectorAll('.style-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const style = e.target.dataset.style;
+        this.applyStyle(style);
+      });
+    });
+  }
+
+  applyStyle(styleName) {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    let element;
+
+    if (range.collapsed) {
+      // No selection - apply to current block
+      element = this.findParentBlock(range.startContainer);
+    } else {
+      // Has selection - wrap in new element
+      element = this.wrapSelection(range);
+    }
+
+    if (element) {
+      this.clearElementStyles(element);
+      this.applyStyleToElement(element, styleName);
+      this.updateStyleButtons();
+    }
+  }
+
+  findParentBlock(node) {
+    const blockElements = ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
+    let current = node;
+
+    while (current && current !== this.editor) {
+      if (current.nodeType === Node.ELEMENT_NODE && blockElements.includes(current.tagName)) {
+        return current;
+      }
+      current = current.parentNode;
+    }
+
+    // Create a new paragraph if none found
+    const p = document.createElement('p');
+    if (node.nodeType === Node.TEXT_NODE) {
+      const parent = node.parentNode;
+      parent.insertBefore(p, node);
+      p.appendChild(node);
+    }
+    return p;
+  }
+
+  wrapSelection(range) {
+    const p = document.createElement('p');
+    try {
+      p.appendChild(range.extractContents());
+      range.insertNode(p);
+      return p;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  clearElementStyles(element) {
+    element.className = '';
+    element.style.cssText = '';
+  }
+
+  applyStyleToElement(element, styleName) {
+    const styles = {
+      normal: {
+        tagName: 'P',
+        styles: {
+          fontFamily: 'Times New Roman, serif',
+          fontSize: '14px',
+          fontWeight: 'normal',
+          color: '#333',
+          textAlign: 'left',
+          lineHeight: '1.6'
+        }
+      },
+      heading1: {
+        tagName: 'H1',
+        styles: {
+          fontFamily: 'Times New Roman, serif',
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: '#2e4a6b',
+          marginBottom: '12px',
+          marginTop: '24px'
+        }
+      },
+      heading2: {
+        tagName: 'H2',
+        styles: {
+          fontFamily: 'Times New Roman, serif',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          color: '#2e4a6b',
+          marginBottom: '10px',
+          marginTop: '18px'
+        }
+      },
+      title: {
+        tagName: 'H1',
+        styles: {
+          fontFamily: 'Times New Roman, serif',
+          fontSize: '28px',
+          fontWeight: 'bold',
+          color: '#000',
+          textAlign: 'center',
+          marginBottom: '24px',
+          marginTop: '0'
+        }
+      }
+    };
+
+    const style = styles[styleName] || styles.normal;
+    
+    // Change tag name if needed
+    if (element.tagName !== style.tagName) {
+      const newElement = document.createElement(style.tagName);
+      newElement.innerHTML = element.innerHTML;
+      element.parentNode.replaceChild(newElement, element);
+      element = newElement;
+    }
+
+    // Apply styles
+    Object.assign(element.style, style.styles);
+    element.className = `style-${styleName}`;
+
+    return element;
+  }
+
+  updateStyleButtons() {
+    const buttons = document.querySelectorAll('.style-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const element = this.findParentBlock(selection.getRangeAt(0).startContainer);
+      if (element && element.className) {
+        const styleMatch = element.className.match(/style-(\w+)/);
+        if (styleMatch) {
+          const btn = document.querySelector(`[data-style="${styleMatch[1]}"]`);
+          if (btn) btn.classList.add('active');
+        }
+      }
+    }
+  }
+
   // === SEARCH CONTROLS ===
   initializeSearchControls() {
     const findBtn = document.getElementById('find-btn');
@@ -318,6 +481,50 @@ class WryteEditor {
     document.getElementById('table-cols-btn').addEventListener('click', () => {
       this.insertTableColumn();
     });
+
+    // Export controls
+    const exportPdfBtn = document.getElementById('export-pdf-btn');
+    if (exportPdfBtn) {
+      exportPdfBtn.addEventListener('click', () => {
+        this.exportToPDF();
+      });
+    }
+
+    const exportTxtBtn = document.getElementById('export-txt-btn');
+    if (exportTxtBtn) {
+      exportTxtBtn.addEventListener('click', () => {
+        this.exportToText();
+      });
+    }
+
+    const exportHtmlBtn = document.getElementById('export-html-btn');
+    if (exportHtmlBtn) {
+      exportHtmlBtn.addEventListener('click', () => {
+        this.exportToHTML();
+      });
+    }
+
+    // Collaborative controls
+    const addCommentBtn = document.getElementById('add-comment-btn');
+    if (addCommentBtn) {
+      addCommentBtn.addEventListener('click', () => {
+        this.addComment();
+      });
+    }
+
+    const trackChangesBtn = document.getElementById('track-changes-btn');
+    if (trackChangesBtn) {
+      trackChangesBtn.addEventListener('click', () => {
+        this.toggleTrackChanges();
+      });
+    }
+
+    const showCommentsBtn = document.getElementById('show-comments-btn');
+    if (showCommentsBtn) {
+      showCommentsBtn.addEventListener('click', () => {
+        this.toggleShowComments();
+      });
+    }
   }
 
   // === VIEW CONTROLS ===
@@ -333,6 +540,50 @@ class WryteEditor {
     document.getElementById('zoom-reset-btn').addEventListener('click', () => {
       this.setZoom(100);
     });
+
+    // Print controls
+    const printPreviewBtn = document.getElementById('print-preview-btn');
+    if (printPreviewBtn) {
+      printPreviewBtn.addEventListener('click', () => {
+        this.openPrintPreview();
+      });
+    }
+
+    const printBtn = document.getElementById('print-btn');
+    if (printBtn) {
+      printBtn.addEventListener('click', () => {
+        this.printDocument();
+      });
+    }
+
+    const pageSetupBtn = document.getElementById('page-setup-btn');
+    if (pageSetupBtn) {
+      pageSetupBtn.addEventListener('click', () => {
+        this.openPageSetup();
+      });
+    }
+
+    // Spell checking controls
+    const spellCheckBtn = document.getElementById('spell-check-btn');
+    if (spellCheckBtn) {
+      spellCheckBtn.addEventListener('click', () => {
+        this.toggleSpellCheck();
+      });
+    }
+
+    const ignoreAllBtn = document.getElementById('ignore-all-btn');
+    if (ignoreAllBtn) {
+      ignoreAllBtn.addEventListener('click', () => {
+        this.ignoreAllSpellingErrors();
+      });
+    }
+
+    const addToDictBtn = document.getElementById('add-to-dict-btn');
+    if (addToDictBtn) {
+      addToDictBtn.addEventListener('click', () => {
+        this.addSelectedWordToDictionary();
+      });
+    }
   }
 
   // === TAB CONTROLS ===
@@ -346,9 +597,10 @@ class WryteEditor {
 
   // === EDITOR EVENTS ===
   initializeEditorEvents() {
-
     this.editor.addEventListener('input', () => {
       this.updateStats();
+      this.checkForPageBreak();
+      this.updatePageNumbers();
     });
 
     this.editor.addEventListener('keydown', (e) => {
@@ -358,6 +610,7 @@ class WryteEditor {
     // Update button states when selection changes
     document.addEventListener('selectionchange', () => {
       this.updateButtonStates();
+      this.updatePageNumbers();
     });
   }
 
@@ -369,13 +622,58 @@ class WryteEditor {
   }
 
   applyTextColor(color) {
-    this.execCommand('foreColor', color);
+    // Ensure editor is focused
+    this.editor.focus();
+    
+    // Use a more reliable method for text color
+    try {
+      // Try the standard command first
+      if (!document.execCommand('foreColor', false, color)) {
+        // Fallback: wrap selection in span with style
+        this.wrapSelectionWithStyle('color', color);
+      }
+    } catch (e) {
+      // Fallback method
+      this.wrapSelectionWithStyle('color', color);
+    }
+    
     this.updateColorBar('text-color-bar', color);
   }
 
   applyHighlightColor(color) {
-    this.execCommand('hiliteColor', color);
+    // Ensure editor is focused
+    this.editor.focus();
+    
+    try {
+      // Try hiliteColor first, then backColor as fallback
+      if (!document.execCommand('hiliteColor', false, color)) {
+        if (!document.execCommand('backColor', false, color)) {
+          this.wrapSelectionWithStyle('background-color', color);
+        }
+      }
+    } catch (e) {
+      this.wrapSelectionWithStyle('background-color', color);
+    }
+    
     this.updateColorBar('highlight-color-bar', color);
+  }
+
+  wrapSelectionWithStyle(property, value) {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      if (!range.collapsed) {
+        const span = document.createElement('span');
+        span.style[property] = value;
+        
+        try {
+          span.appendChild(range.extractContents());
+          range.insertNode(span);
+        } catch (e) {
+          console.warn('Could not apply style:', e);
+        }
+      }
+    }
   }
 
   updateColorBar(elementId, color) {
@@ -456,19 +754,471 @@ class WryteEditor {
   }
 
   toggleSubscript() {
-    // Clear superscript first if it's active
-    if (document.queryCommandState('superscript')) {
-      this.execCommand('superscript');
+    this.editor.focus();
+    
+    try {
+      // Clear superscript first if it's active
+      if (document.queryCommandState('superscript')) {
+        this.execCommand('superscript');
+      }
+      
+      // Try execCommand first
+      if (!this.execCommand('subscript')) {
+        // Fallback: manual implementation
+        this.toggleVerticalAlign('sub');
+      }
+    } catch (e) {
+      this.toggleVerticalAlign('sub');
     }
-    this.execCommand('subscript');
   }
 
   toggleSuperscript() {
-    // Clear subscript first if it's active
-    if (document.queryCommandState('subscript')) {
-      this.execCommand('subscript');
+    this.editor.focus();
+    
+    try {
+      // Clear subscript first if it's active
+      if (document.queryCommandState('subscript')) {
+        this.execCommand('subscript');
+      }
+      
+      // Try execCommand first
+      if (!this.execCommand('superscript')) {
+        // Fallback: manual implementation
+        this.toggleVerticalAlign('super');
+      }
+    } catch (e) {
+      this.toggleVerticalAlign('super');
     }
-    this.execCommand('superscript');
+  }
+
+  toggleVerticalAlign(alignType) {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      if (!range.collapsed) {
+        const selectedContent = range.extractContents();
+        
+        // Create appropriate element
+        const element = alignType === 'sub' ? document.createElement('sub') : document.createElement('sup');
+        element.appendChild(selectedContent);
+        
+        try {
+          range.insertNode(element);
+          
+          // Restore selection after the inserted element
+          range.setStartAfter(element);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        } catch (e) {
+          console.warn('Could not apply vertical alignment:', e);
+        }
+      }
+    }
+  }
+
+  // === DOCUMENT STRUCTURE ===
+  createNewPage() {
+    this.currentPage++;
+    const newPage = document.createElement('div');
+    newPage.className = 'document-page';
+    newPage.id = `page-${this.currentPage}`;
+    
+    newPage.innerHTML = `
+      <div class="page-header" contenteditable="true" placeholder="Header"></div>
+      <div class="editor-page" contenteditable="true"></div>
+      <div class="page-footer" contenteditable="true" placeholder="Footer"></div>
+    `;
+    
+    this.documentWrapper.appendChild(newPage);
+    return newPage;
+  }
+
+  checkForPageBreak() {
+    const editorHeight = this.editor.scrollHeight;
+    const maxHeight = (this.pageHeight - 2) * 96; // Convert inches to pixels (96 DPI) minus margins
+    
+    if (editorHeight > maxHeight) {
+      this.createNewPage();
+    }
+  }
+
+  updatePageNumbers() {
+    const pages = document.querySelectorAll('.document-page');
+    const totalPages = pages.length;
+    
+    pages.forEach((page, index) => {
+      const pageNumber = index + 1;
+      const footer = page.querySelector('.page-footer');
+      if (footer && footer.textContent.trim() === '') {
+        footer.innerHTML = `Page ${pageNumber} of ${totalPages}`;
+      }
+    });
+    
+    // Update status bar
+    const statusPageInfo = document.querySelector('.status-bar span:last-child');
+    if (statusPageInfo) {
+      statusPageInfo.textContent = `Page ${this.getCurrentPageNumber()} of ${totalPages}`;
+    }
+  }
+
+  getCurrentPageNumber() {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      let currentElement = range.startContainer;
+      
+      while (currentElement && !currentElement.classList?.contains('document-page')) {
+        currentElement = currentElement.parentNode;
+      }
+      
+      if (currentElement) {
+        const pageId = currentElement.id;
+        const pageNum = pageId.replace('page-', '');
+        return parseInt(pageNum) || 1;
+      }
+    }
+    return 1;
+  }
+
+  // === PRINT FUNCTIONALITY ===
+  printDocument() {
+    // Prepare document for printing
+    const originalTitle = document.title;
+    document.title = 'Wryte Document - Print';
+    
+    // Apply print styles
+    document.body.classList.add('printing');
+    
+    try {
+      window.print();
+    } finally {
+      // Restore after printing
+      document.body.classList.remove('printing');
+      document.title = originalTitle;
+    }
+  }
+
+  openPrintPreview() {
+    // Create print preview modal
+    const modal = this.createPrintPreviewModal();
+    document.body.appendChild(modal);
+  }
+
+  createPrintPreviewModal() {
+    const modal = document.createElement('div');
+    modal.className = 'print-preview-modal';
+    modal.innerHTML = `
+      <div class="print-preview-content">
+        <div class="print-preview-header">
+          <h3>Print Preview</h3>
+          <div class="print-preview-controls">
+            <button id="print-preview-print">Print</button>
+            <button id="print-preview-close">Close</button>
+          </div>
+        </div>
+        <div class="print-preview-body">
+          <div class="print-preview-pages">
+            ${this.generatePrintPreview()}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add event listeners
+    modal.querySelector('#print-preview-print').addEventListener('click', () => {
+      modal.remove();
+      this.printDocument();
+    });
+
+    modal.querySelector('#print-preview-close').addEventListener('click', () => {
+      modal.remove();
+    });
+
+    return modal;
+  }
+
+  generatePrintPreview() {
+    const pages = document.querySelectorAll('.document-page');
+    let previewHTML = '';
+    
+    pages.forEach(page => {
+      previewHTML += `
+        <div class="print-preview-page">
+          ${page.outerHTML}
+        </div>
+      `;
+    });
+    
+    return previewHTML;
+  }
+
+  openPageSetup() {
+    alert('Page Setup functionality would integrate with the browser\'s print settings.\nUse your browser\'s print dialog (Ctrl+P) to configure page settings.');
+  }
+
+  // === SPELL CHECKING ===
+  toggleSpellCheck() {
+    this.spellCheckEnabled = !this.spellCheckEnabled;
+    const btn = document.getElementById('spell-check-btn');
+    
+    if (this.spellCheckEnabled) {
+      btn.classList.add('active');
+      this.editor.setAttribute('spellcheck', 'true');
+      this.showNotification('Spell check enabled', 'success');
+    } else {
+      btn.classList.remove('active');
+      this.editor.setAttribute('spellcheck', 'false');
+      this.showNotification('Spell check disabled', 'success');
+    }
+  }
+
+  ignoreAllSpellingErrors() {
+    const misspelledWords = this.editor.querySelectorAll('[spellcheck="false"]');
+    let count = 0;
+    
+    misspelledWords.forEach(element => {
+      const word = element.textContent.trim().toLowerCase();
+      if (word) {
+        this.ignoredWords.add(word);
+        element.style.textDecoration = 'none';
+        count++;
+      }
+    });
+    
+    if (count > 0) {
+      this.showNotification(`Ignored ${count} spelling errors`, 'success');
+    } else {
+      this.showNotification('No spelling errors found to ignore', 'info');
+    }
+  }
+
+  addSelectedWordToDictionary() {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) {
+      this.showNotification('Please select a word to add to dictionary', 'error');
+      return;
+    }
+
+    const selectedText = selection.toString().trim().toLowerCase();
+    if (selectedText) {
+      this.customDictionary.add(selectedText);
+      this.showNotification(`"${selectedText}" added to personal dictionary`, 'success');
+      
+      // Remove spelling error styling from all instances
+      this.removeSpellingErrorsForWord(selectedText);
+    } else {
+      this.showNotification('Please select a word to add to dictionary', 'error');
+    }
+  }
+
+  removeSpellingErrorsForWord(word) {
+    const walker = document.createTreeWalker(
+      this.editor,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false
+    );
+
+    let node;
+    while (node = walker.nextNode()) {
+      if (node.textContent.toLowerCase().includes(word)) {
+        const parent = node.parentElement;
+        if (parent && parent.style.textDecoration === 'underline wavy red') {
+          parent.style.textDecoration = 'none';
+        }
+      }
+    }
+  }
+
+  // === EXPORT FUNCTIONALITY ===
+  exportToPDF() {
+    // Use browser's built-in PDF export
+    const originalTitle = document.title;
+    document.title = 'Wryte Document';
+    
+    // Apply print styles
+    document.body.classList.add('printing');
+    
+    // Show print dialog which can save as PDF
+    try {
+      window.print();
+      this.showNotification('Use "Save as PDF" in the print dialog to export as PDF', 'info');
+    } finally {
+      document.body.classList.remove('printing');
+      document.title = originalTitle;
+    }
+  }
+
+  exportToText() {
+    const textContent = this.editor.textContent || '';
+    const blob = new Blob([textContent], { type: 'text/plain' });
+    this.downloadFile(blob, 'wryte-document.txt');
+  }
+
+  exportToHTML() {
+    const pages = document.querySelectorAll('.document-page');
+    let htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wryte Document</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; line-height: 1.6; margin: 40px; }
+    .page { page-break-after: always; margin-bottom: 40px; }
+    .page:last-child { page-break-after: avoid; }
+    .page-header { border-bottom: 1px solid #ccc; margin-bottom: 20px; padding-bottom: 10px; font-size: 10px; color: #666; text-align: center; }
+    .page-footer { border-top: 1px solid #ccc; margin-top: 20px; padding-top: 10px; font-size: 10px; color: #666; text-align: center; }
+    table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+    td { border: 1px solid #ccc; padding: 8px; }
+  </style>
+</head>
+<body>
+`;
+
+    pages.forEach((page, index) => {
+      const header = page.querySelector('.page-header').innerHTML;
+      const content = page.querySelector('.editor').innerHTML;
+      const footer = page.querySelector('.page-footer').innerHTML;
+      
+      htmlContent += `
+  <div class="page">
+    <div class="page-header">${header}</div>
+    <div class="page-content">${content}</div>
+    <div class="page-footer">${footer}</div>
+  </div>
+`;
+    });
+
+    htmlContent += `
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    this.downloadFile(blob, 'wryte-document.html');
+  }
+
+  downloadFile(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    this.showNotification(`${filename} downloaded successfully`, 'success');
+  }
+
+  // === COLLABORATIVE FEATURES ===
+  addComment() {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0 || selection.toString().trim() === '') {
+      this.showNotification('Please select text to comment on', 'error');
+      return;
+    }
+
+    const commentText = prompt('Enter your comment:');
+    if (!commentText || commentText.trim() === '') return;
+
+    const range = selection.getRangeAt(0);
+    const commentId = 'comment-' + Date.now();
+    
+    // Wrap selected text with comment span
+    const commentSpan = document.createElement('span');
+    commentSpan.className = 'commented-text';
+    commentSpan.setAttribute('data-comment-id', commentId);
+    commentSpan.setAttribute('data-comment', commentText);
+    commentSpan.setAttribute('title', `Comment: ${commentText}`);
+    commentSpan.style.backgroundColor = '#fff2cc';
+    commentSpan.style.borderLeft = '3px solid #f1c40f';
+    commentSpan.style.paddingLeft = '2px';
+    commentSpan.style.cursor = 'help';
+    
+    try {
+      commentSpan.appendChild(range.extractContents());
+      range.insertNode(commentSpan);
+      this.showNotification('Comment added successfully', 'success');
+    } catch (e) {
+      this.showNotification('Could not add comment', 'error');
+    }
+  }
+
+  toggleTrackChanges() {
+    const btn = document.getElementById('track-changes-btn');
+    const isActive = btn.classList.contains('active');
+    
+    if (isActive) {
+      btn.classList.remove('active');
+      this.showNotification('Track changes disabled', 'success');
+    } else {
+      btn.classList.add('active');
+      this.showNotification('Track changes enabled - changes will be highlighted', 'success');
+      
+      // Add mutation observer for tracking changes
+      this.startTrackingChanges();
+    }
+  }
+
+  startTrackingChanges() {
+    if (this.changeObserver) {
+      this.changeObserver.disconnect();
+    }
+
+    this.changeObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+              this.highlightChange(node, 'added');
+            }
+          });
+        }
+      });
+    });
+
+    this.changeObserver.observe(this.editor, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  }
+
+  highlightChange(node, type) {
+    const span = document.createElement('span');
+    span.className = `tracked-${type}`;
+    span.style.backgroundColor = type === 'added' ? '#c8e6c9' : '#ffcdd2';
+    span.style.borderLeft = `2px solid ${type === 'added' ? '#4caf50' : '#f44336'}`;
+    
+    if (node.parentNode && node.nodeType === Node.TEXT_NODE) {
+      node.parentNode.insertBefore(span, node);
+      span.appendChild(node);
+    }
+  }
+
+  toggleShowComments() {
+    const btn = document.getElementById('show-comments-btn');
+    const comments = document.querySelectorAll('.commented-text');
+    const isActive = btn.classList.contains('active');
+    
+    if (isActive) {
+      btn.classList.remove('active');
+      comments.forEach(comment => {
+        comment.style.backgroundColor = '';
+        comment.style.borderLeft = '';
+      });
+      this.showNotification('Comments hidden', 'success');
+    } else {
+      btn.classList.add('active');
+      comments.forEach(comment => {
+        comment.style.backgroundColor = '#fff2cc';
+        comment.style.borderLeft = '3px solid #f1c40f';
+      });
+      this.showNotification('Comments shown', 'success');
+    }
   }
 
   // === BUTTON STATE UPDATES ===
@@ -511,6 +1261,9 @@ class WryteEditor {
     
     // Update font controls to show current values
     this.updateFontControls();
+    
+    // Update style buttons
+    this.updateStyleButtons();
   }
 
   updateFontControls() {
@@ -635,6 +1388,10 @@ class WryteEditor {
         case 'f':
           e.preventDefault();
           this.openFindDialog();
+          break;
+        case 'p':
+          e.preventDefault();
+          this.printDocument();
           break;
       }
     }

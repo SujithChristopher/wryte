@@ -261,6 +261,62 @@ body {
   align-items: center;
 }
 
+/* Styles Gallery */
+.styles-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+}
+
+.style-btn {
+  width: 100% !important;
+  text-align: left !important;
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  height: 24px !important;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+}
+
+.style-btn[data-style="normal"] {
+  font-family: 'Times New Roman', serif;
+  font-size: 11px;
+}
+
+.style-btn[data-style="heading1"] {
+  font-family: 'Times New Roman', serif;
+  font-size: 14px;
+  font-weight: bold;
+  color: #2e4a6b;
+}
+
+.style-btn[data-style="heading2"] {
+  font-family: 'Times New Roman', serif;
+  font-size: 12px;
+  font-weight: bold;
+  color: #2e4a6b;
+}
+
+.style-btn[data-style="title"] {
+  font-family: 'Times New Roman', serif;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center !important;
+}
+
+.style-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.style-btn.active {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
 .toolbar button:hover {
   background: #f3f4f6;
   border-color: #9ca3af;
@@ -308,23 +364,63 @@ body {
   overflow: auto;
 }
 
+.document-wrapper {
+  padding: 20px;
+}
+
 .document-page {
   background: white;
-  max-width: 8.5in;
+  width: 8.5in;
   min-height: 11in;
-  margin: 0 auto;
-  padding: 1in;
+  margin: 0 auto 20px auto;
+  padding: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.page-header {
+  min-height: 0.75in;
+  padding: 0.5in 1in 0.25in 1in;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 10px;
+  color: #6c757d;
+  text-align: center;
+}
+
+.page-header:empty::before {
+  content: attr(placeholder);
+  color: #adb5bd;
+  pointer-events: none;
+}
+
+.page-footer {
+  min-height: 0.75in;
+  padding: 0.25in 1in 0.5in 1in;
+  border-top: 1px solid #e9ecef;
+  font-size: 10px;
+  color: #6c757d;
+  text-align: center;
+  margin-top: auto;
+}
+
+.page-footer:empty::before {
+  content: attr(placeholder);
+  color: #adb5bd;
+  pointer-events: none;
 }
 
 .editor {
+  flex: 1;
   min-height: 9in;
   outline: none;
   font-family: 'Times New Roman', serif;
   font-size: 14px;
   line-height: 1.6;
   color: #333;
+  padding: 1in;
 }
 
 .editor:empty::before {
@@ -504,12 +600,81 @@ body {
   background-color: #f8f9fa;
 }
 
+/* Print Preview Modal */
+.print-preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.print-preview-content {
+  background: white;
+  width: 90%;
+  height: 90%;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.print-preview-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.print-preview-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.print-preview-controls button {
+  padding: 8px 16px;
+  border: 1px solid #007bff;
+  background: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.print-preview-controls button:hover {
+  background: #0056b3;
+}
+
+.print-preview-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.print-preview-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.print-preview-page {
+  transform: scale(0.6);
+  transform-origin: top center;
+  margin-bottom: 20px;
+}
+
 /* Print styles */
 @media print {
   .toolbar,
   .status-bar,
-  .dialog {
-    display: none;
+  .dialog,
+  .print-preview-modal {
+    display: none !important;
   }
   
   .editor-container {
@@ -517,13 +682,34 @@ body {
     padding: 0;
   }
   
+  .document-wrapper {
+    padding: 0;
+  }
+  
   .document-page {
     box-shadow: none;
     margin: 0;
     padding: 0;
+    border-radius: 0;
+    page-break-after: always;
+  }
+  
+  .document-page:last-child {
+    page-break-after: avoid;
   }
   
   .wryte-table {
     page-break-inside: avoid;
   }
+  
+  .page-header,
+  .page-footer {
+    print-color-adjust: exact;
+  }
+}
+
+/* Printing class for body */
+.printing .toolbar,
+.printing .status-bar {
+  display: none;
 }

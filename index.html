@@ -114,6 +114,18 @@
           </div>
 
           <div class="toolbar-section">
+            <div class="section-label">Styles</div>
+            <div class="toolbar-group vertical">
+              <div class="styles-gallery">
+                <button class="style-btn" data-style="normal" title="Normal">Normal</button>
+                <button class="style-btn" data-style="heading1" title="Heading 1">Heading 1</button>
+                <button class="style-btn" data-style="heading2" title="Heading 2">Heading 2</button>
+                <button class="style-btn" data-style="title" title="Title">Title</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
             <div class="section-label">Editing</div>
             <div class="toolbar-group vertical">
               <div class="editing-group">
@@ -150,6 +162,28 @@
               <button id="word-art-btn" title="WordArt">✨</button>
             </div>
           </div>
+
+          <div class="toolbar-section">
+            <div class="section-label">Export</div>
+            <div class="toolbar-group vertical">
+              <button id="export-pdf-btn" title="Export as PDF" class="large-btn">📄</button>
+              <div style="display: flex; gap: 2px;">
+                <button id="export-txt-btn" title="Export as Text" class="small-btn">📝</button>
+                <button id="export-html-btn" title="Export as HTML" class="small-btn">🌐</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
+            <div class="section-label">Collaborate</div>
+            <div class="toolbar-group vertical">
+              <button id="add-comment-btn" title="Add Comment" class="large-btn">💬</button>
+              <div style="display: flex; gap: 2px;">
+                <button id="track-changes-btn" title="Track Changes" class="small-btn">📝</button>
+                <button id="show-comments-btn" title="Show Comments" class="small-btn">👁️</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- View Tab Content -->
@@ -165,6 +199,17 @@
           </div>
 
           <div class="toolbar-section">
+            <div class="section-label">Proofing</div>
+            <div class="toolbar-group vertical">
+              <button id="spell-check-btn" title="Toggle Spell Check" class="large-btn">📝</button>
+              <div style="display: flex; gap: 2px;">
+                <button id="ignore-all-btn" title="Ignore All" class="small-btn">🚫</button>
+                <button id="add-to-dict-btn" title="Add to Dictionary" class="small-btn">📖</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
             <div class="section-label">Show</div>
             <div class="toolbar-group">
               <button id="ruler-btn" title="Show Ruler">📏</button>
@@ -174,22 +219,30 @@
 
           <div class="toolbar-section">
             <div class="section-label">Print</div>
-            <div class="toolbar-group">
-              <button id="print-preview-btn" title="Print Preview">👁️</button>
-              <button id="print-btn" title="Print">🖨️</button>
+            <div class="toolbar-group vertical">
+              <button id="print-preview-btn" title="Print Preview" class="large-btn">👁️</button>
+              <div style="display: flex; gap: 2px;">
+                <button id="print-btn" title="Print (Ctrl+P)" class="small-btn">🖨️</button>
+                <button id="page-setup-btn" title="Page Setup" class="small-btn">📄</button>
+              </div>
             </div>
           </div>
         </div>
       </header>
       
       <main class="editor-container">
-        <div class="document-page">
-          <div 
-            id="editor" 
-            contenteditable="true" 
-            class="editor"
-            placeholder="Start typing..."
-          ></div>
+        <div class="document-wrapper">
+          <div class="document-page" id="page-1">
+            <div class="page-header" contenteditable="true" placeholder="Header"></div>
+            <div 
+              id="editor" 
+              contenteditable="true" 
+              class="editor"
+              spellcheck="true"
+              placeholder="Start typing..."
+            ></div>
+            <div class="page-footer" contenteditable="true" placeholder="Footer"></div>
+          </div>
         </div>
       </main>
       
