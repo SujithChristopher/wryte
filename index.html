@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wryte - Word Processor</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="toolbar">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button class="tab-btn active" data-tab="home">Home</button>
+          <button class="tab-btn" data-tab="insert">Insert</button>
+          <button class="tab-btn" data-tab="view">View</button>
+        </div>
+
+        <!-- Home Tab Content -->
+        <div class="tab-content active" id="home-tab">
+          <div class="toolbar-section">
+            <div class="section-label">Clipboard</div>
+            <div class="toolbar-group vertical">
+              <div class="large-btn-group">
+                <button id="paste-btn" title="Paste (Ctrl+V)" class="large-btn">📋</button>
+              </div>
+              <div class="small-btn-group">
+                <button id="cut-btn" title="Cut (Ctrl+X)" class="small-btn">✂️</button>
+                <button id="copy-btn" title="Copy (Ctrl+C)" class="small-btn">📄</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
+            <div class="section-label">Font</div>
+            <div class="toolbar-group vertical">
+              <div class="font-row">
+                <select id="font-family" class="font-select">
+                  <option value="Calibri">Calibri</option>
+                  <option value="Arial">Arial</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Courier New">Courier New</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Verdana">Verdana</option>
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="Comic Sans MS">Comic Sans MS</option>
+                </select>
+                <select id="font-size" class="size-select">
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11" selected>11</option>
+                  <option value="12">12</option>
+                  <option value="14">14</option>
+                  <option value="16">16</option>
+                  <option value="18">18</option>
+                  <option value="20">20</option>
+                  <option value="24">24</option>
+                  <option value="28">28</option>
+                  <option value="32">32</option>
+                  <option value="36">36</option>
+                  <option value="48">48</option>
+                  <option value="72">72</option>
+                </select>
+                <button id="grow-font-btn" title="Grow Font" class="font-size-btn">A⬆</button>
+                <button id="shrink-font-btn" title="Shrink Font" class="font-size-btn">A⬇</button>
+              </div>
+              <div class="format-row">
+                <button id="bold-btn" title="Bold (Ctrl+B)" class="format-btn"><b>B</b></button>
+                <button id="italic-btn" title="Italic (Ctrl+I)" class="format-btn"><i>I</i></button>
+                <button id="underline-btn" title="Underline (Ctrl+U)" class="format-btn"><u>U</u></button>
+                <button id="strikethrough-btn" title="Strikethrough (Ctrl+D)" class="format-btn"><s>S</s></button>
+                <button id="subscript-btn" title="Subscript" class="format-btn">X₂</button>
+                <button id="superscript-btn" title="Superscript" class="format-btn">X²</button>
+              </div>
+              <div class="color-row">
+                <div class="color-btn-group">
+                  <button id="text-color-btn" title="Text Color" class="color-btn-main">
+                    <span class="color-icon">A</span>
+                    <div class="color-bar" id="text-color-bar"></div>
+                  </button>
+                  <button id="text-color-dropdown" title="Text Color Options" class="color-dropdown">▼</button>
+                  <input type="color" id="text-color-picker" value="#000000" style="display: none;">
+                </div>
+                <div class="color-btn-group">
+                  <button id="highlight-color-btn" title="Highlight Color" class="color-btn-main">
+                    <span class="highlight-icon">🖍️</span>
+                    <div class="color-bar" id="highlight-color-bar"></div>
+                  </button>
+                  <button id="highlight-color-dropdown" title="Highlight Color Options" class="color-dropdown">▼</button>
+                  <input type="color" id="highlight-color-picker" value="#ffff00" style="display: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
+            <div class="section-label">Paragraph</div>
+            <div class="toolbar-group vertical">
+              <div class="paragraph-row">
+                <button id="bullets-btn" title="Bullets" class="para-btn">•</button>
+                <button id="numbering-btn" title="Numbering" class="para-btn">1.</button>
+                <button id="outdent-btn" title="Decrease Indent" class="para-btn">⇤</button>
+                <button id="indent-btn" title="Increase Indent" class="para-btn">⇥</button>
+              </div>
+              <div class="alignment-row">
+                <button id="align-left-btn" title="Align Left" class="align-btn">⬅️</button>
+                <button id="align-center-btn" title="Center" class="align-btn">⬇️</button>
+                <button id="align-right-btn" title="Align Right" class="align-btn">➡️</button>
+                <button id="align-justify-btn" title="Justify" class="align-btn">⬌</button>
+                <button id="line-spacing-btn" title="Line Spacing" class="align-btn">≡</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
+            <div class="section-label">Editing</div>
+            <div class="toolbar-group vertical">
+              <div class="editing-group">
+                <button id="find-btn" title="Find & Replace (Ctrl+F)" class="large-btn">🔍</button>
+                <button id="select-all-btn" title="Select All (Ctrl+A)" class="small-btn">📑</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Insert Tab Content -->
+        <div class="tab-content" id="insert-tab">
+          <div class="toolbar-section">
+            <div class="section-label">Tables</div>
+            <div class="toolbar-group">
+              <button id="insert-table-btn" title="Insert Table">📊</button>
+              <button id="table-rows-btn" title="Insert Rows">⬛</button>
+              <button id="table-cols-btn" title="Insert Columns">⬜</button>
+            </div>
+          </div>
+          
+          <div class="toolbar-section">
+            <div class="section-label">Illustrations</div>
+            <div class="toolbar-group">
+              <button id="insert-image-btn" title="Insert Image">🖼️</button>
+              <button id="insert-shape-btn" title="Insert Shape">🔷</button>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
+            <div class="section-label">Text</div>
+            <div class="toolbar-group">
+              <button id="text-box-btn" title="Text Box">📝</button>
+              <button id="word-art-btn" title="WordArt">✨</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- View Tab Content -->
+        <div class="tab-content" id="view-tab">
+          <div class="toolbar-section">
+            <div class="section-label">Zoom</div>
+            <div class="toolbar-group">
+              <button id="zoom-out-btn" title="Zoom Out">−</button>
+              <span id="zoom-level">100%</span>
+              <button id="zoom-in-btn" title="Zoom In">+</button>
+              <button id="zoom-reset-btn" title="Reset Zoom">⚏</button>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
+            <div class="section-label">Show</div>
+            <div class="toolbar-group">
+              <button id="ruler-btn" title="Show Ruler">📏</button>
+              <button id="gridlines-btn" title="Show Gridlines">⊞</button>
+            </div>
+          </div>
+
+          <div class="toolbar-section">
+            <div class="section-label">Print</div>
+            <div class="toolbar-group">
+              <button id="print-preview-btn" title="Print Preview">👁️</button>
+              <button id="print-btn" title="Print">🖨️</button>
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      <main class="editor-container">
+        <div class="document-page">
+          <div 
+            id="editor" 
+            contenteditable="true" 
+            class="editor"
+            placeholder="Start typing..."
+          ></div>
+        </div>
+      </main>
+      
+      <footer class="status-bar">
+        <span id="word-count">Words: 0</span>
+        <span id="char-count">Characters: 0</span>
+        <span>Page 1 of 1</span>
+      </footer>
+    </div>
+    
+    <!-- Find & Replace Dialog -->
+    <div id="find-replace-dialog" class="dialog hidden">
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <h3>Find & Replace</h3>
+          <button id="close-find-dialog" class="close-btn">×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="input-group">
+            <label for="find-input">Find:</label>
+            <input type="text" id="find-input" placeholder="Enter text to find...">
+            <button id="find-next-btn">Find Next</button>
+            <button id="find-prev-btn">Find Previous</button>
+          </div>
+          <div class="input-group">
+            <label for="replace-input">Replace:</label>
+            <input type="text" id="replace-input" placeholder="Enter replacement text...">
+            <button id="replace-btn">Replace</button>
+            <button id="replace-all-btn">Replace All</button>
+          </div>
+          <div class="search-options">
+            <label>
+              <input type="checkbox" id="match-case"> Match Case
+            </label>
+            <label>
+              <input type="checkbox" id="whole-word"> Whole Word
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
